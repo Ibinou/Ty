@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enregistrement de fichiers</title>
+  <title>Enregistrement de fichiers dans le localStorage</title>
 </head>
 <body>
 
@@ -11,7 +11,7 @@
 <button onclick="saveFiles()">Enregistrer</button>
 
 <script>
-async function saveFiles() {
+function saveFiles() {
   const fileInput = document.getElementById('fileInput');
 
   if (fileInput.files.length > 0) {
@@ -19,15 +19,21 @@ async function saveFiles() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const content = await readFileContent(file);
-      saveToFileSystem(file.name, content);
+      readFileContent(file)
+        .then(content => {
+          saveToLocalStorage(file.name, content);
+        })
+        .catch(error => {
+          console.error('Erreur lors de la lecture du fichier:', error);
+          alert('Une erreur est survenue lors de la lecture du fichier.');
+        });
     }
   } else {
     alert("Veuillez sélectionner au moins un fichier.");
   }
 }
 
-async function readFileContent(file) {
+function readFileContent(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -43,26 +49,13 @@ async function readFileContent(file) {
   });
 }
 
-async function saveToFileSystem(filename, content) {
+function saveToLocalStorage(filename, content) {
   try {
-    const fileHandle = await window.showSaveFilePicker({
-      suggestedName: filename,
-      types: [{
-        description: 'Fichiers texte',
-        accept: {
-          'text/plain': ['.txt', '.p12', '.mobileprovision']
-        }
-      }]
-    });
-
-    const writable = await fileHandle.createWritable();
-    await writable.write(content);
-    await writable.close();
-
-    alert(`Le fichier ${filename} a été enregistré localement.`);
+    localStorage.setItem(filename, content);
+    alert(`Le fichier ${filename} a été enregistré dans le localStorage.`);
   } catch (error) {
-    console.error('Erreur lors de l\'enregistrement du fichier:', error);
-    alert('Une erreur est survenue lors de l\'enregistrement du fichier.');
+    console.error('Erreur lors de l\'enregistrement dans le localStorage:', error);
+    alert('Une erreur est survenue lors de l\'enregistrement dans le localStorage.');
   }
 }
 </script>
