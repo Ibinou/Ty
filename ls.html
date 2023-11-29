@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enregistrement de fichiers</title>
+</head>
+<body>
+
+<input type="file" id="fileInput" accept=".p12, .txt, .mobileprovision">
+<button onclick="saveFiles()">Enregistrer</button>
+
+<script>
+async function saveFiles() {
+  const fileInput = document.getElementById('fileInput');
+
+  if (fileInput.files.length > 0) {
+    const files = fileInput.files;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const content = await readFileContent(file);
+      saveToFileSystem(file.name, content);
+    }
+  } else {
+    alert("Veuillez sélectionner au moins un fichier.");
+  }
+}
+
+async function readFileContent(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+      resolve(event.target.result);
+    };
+
+    reader.onerror = function(event) {
+      reject(event.target.error);
+    };
+
+    reader.readAsText(file);
+  });
+}
+
+async function saveToFileSystem(filename, content) {
+  try {
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [{
+        description: 'Fichiers texte',
+        accept: {
+          'text/plain': ['.txt', '.p12', '.mobileprovision']
+        }
+      }]
+    });
+
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+
+    alert(`Le fichier ${filename} a été enregistré localement.`);
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement du fichier:', error);
+    alert('Une erreur est survenue lors de l\'enregistrement du fichier.');
+  }
+}
+</script>
+
+</body>
+</html>
