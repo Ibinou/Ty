@@ -3,59 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enregistrement de fichiers dans le localStorage</title>
+  <title>Enregistrement de fichiers et création de lien</title>
 </head>
 <body>
 
-<input type="file" id="fileInput" accept=".p12, .txt, .mobileprovision">
-<button onclick="saveFiles()">Enregistrer</button>
+<input type="file" id="p12Input" accept=".p12">
+<input type="file" id="mobileprovisionInput" accept=".mobileprovision">
+<input type="password" id="passwordInput" placeholder="Mot de passe">
+
+<button onclick="saveAndCreateLink()">Enregistrer et créer le lien</button>
+<a id="apiLink" href="#" target="_blank">Lien API</a>
 
 <script>
-function saveFiles() {
-  const fileInput = document.getElementById('fileInput');
+function saveAndCreateLink() {
+  const p12Input = document.getElementById('p12Input');
+  const mobileprovisionInput = document.getElementById('mobileprovisionInput');
+  const passwordInput = document.getElementById('passwordInput');
 
-  if (fileInput.files.length > 0) {
-    const files = fileInput.files;
+  const p12File = p12Input.files[0];
+  const mobileprovisionFile = mobileprovisionInput.files[0];
+  const password = passwordInput.value;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      readFileContent(file)
-        .then(content => {
-          saveToLocalStorage(file.name, content);
-        })
-        .catch(error => {
-          console.error('Erreur lors de la lecture du fichier:', error);
-          alert('Une erreur est survenue lors de la lecture du fichier.');
-        });
+  if (p12File && mobileprovisionFile && password) {
+    try {
+      const [p12Content, mobileprovisionContent] = [
+        btoa(p12File),
+        btoa(mobileprovisionFile)
+      ];
+
+      // Enregistrement des fichiers dans le localStorage
+      localStorage.setItem('p12File', p12Content);
+      localStorage.setItem('mobileprovisionFile', mobileprovisionContent);
+      localStorage.setItem('password', password);
+
+      // Création du lien avec les paramètres du localStorage
+      createApiLink();
+    } catch (error) {
+      console.error('Erreur lors du traitement des fichiers:', error);
+      alert('Une erreur est survenue lors du traitement des fichiers.');
     }
   } else {
-    alert("Veuillez sélectionner au moins un fichier.");
+    alert("Veuillez sélectionner le fichier p12, le fichier mobileprovision et saisir le mot de passe.");
   }
 }
 
-function readFileContent(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+function createApiLink() {
+  const p12Content = localStorage.getItem('p12File');
+  const mobileprovisionContent = localStorage.getItem('mobileprovisionFile');
+  const password = localStorage.getItem('password');
 
-    reader.onload = function(event) {
-      resolve(event.target.result);
-    };
+  if (p12Content && mobileprovisionContent && password) {
+    const apiLink = document.getElementById('apiLink');
+    const apiUrl = 'https://api.cococloud-signing.online/signing-owncert';
 
-    reader.onerror = function(event) {
-      reject(event.target.error);
-    };
+    const linkParams = new URLSearchParams({
+      certp12URL: p12Content,
+      certmobileprovisionURL: mobileprovisionContent,
+      certpass: password,
+      url: 'https://github.com/litchie/dospad/releases/download/2.1/iDOS.ipa' // Ajoutez l'URL si nécessaire
+    });
 
-    reader.readAsText(file);
-  });
-}
-
-function saveToLocalStorage(filename, content) {
-  try {
-    localStorage.setItem(filename, content);
-    alert(`Le fichier ${filename} a été enregistré dans le localStorage.`);
-  } catch (error) {
-    console.error('Erreur lors de l\'enregistrement dans le localStorage:', error);
-    alert('Une erreur est survenue lors de l\'enregistrement dans le localStorage.');
+    apiLink.href = `${apiUrl}?${linkParams.toString()}`;
+  } else {
+    alert('Veuillez d\'abord enregistrer les fichiers et le mot de passe.');
   }
 }
 </script>
